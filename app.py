@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 import random
 from sklearn.linear_model import LinearRegression
+import xlsxwriter
 
 # Clustering
 from sklearn.cluster import KMeans
@@ -43,113 +44,16 @@ st.set_page_config(
 	layout="centered"
 )
 
-# Download button function
-# @st.cache
-# def download_button(object_to_download, download_filename, button_text, pickle_it=False):
-#     """
-#     Generates a link to download the given object_to_download.
-
-#     Params:
-#     ------
-#     object_to_download:  The object to be downloaded.
-#     download_filename (str): filename and extension of file. e.g. mydata.csv,
-#     some_txt_output.txt download_link_text (str): Text to display for download
-#     link.
-#     button_text (str): Text to display on download button (e.g. 'click here to download file')
-#     pickle_it (bool): If True, pickle file.
-
-#     Returns:
-#     -------
-#     (str): the anchor tag to download object_to_download
-
-#     Examples:
-#     --------
-#     download_link(your_df, 'YOUR_DF.csv', 'Click to download data!')
-#     download_link(your_str, 'YOUR_STRING.txt', 'Click to download text!')
-
-#     """
-
-#     global writer
-
-#     if pickle_it:
-#         try:
-#             object_to_download = pickle.dumps(object_to_download)
-#         except pickle.PicklingError as e:
-#             st.write(e)
-#             return None
-
-#     else:
-#         if isinstance(object_to_download, bytes):
-#             pass
-
-#         elif isinstance(object_to_download, pd.DataFrame):
-#             object_to_download = object_to_download.to_csv(index=False)
-
-#         # Try JSON encode for everything else
-#         else:
-#             object_to_download = json.dumps(object_to_download)
-
-#     try:
-#         # some strings <-> bytes conversions necessary here
-#         b64 = base64.b64encode(object_to_download.encode()).decode()
-
-#     except AttributeError as e:
-#         b64 = base64.b64encode(object_to_download).decode()
-
-#     button_uuid = str(uuid.uuid4()).replace('-', '')
-#     button_id = re.sub('\d+', '', button_uuid)
-
-#     custom_css = f""" 
-#         <style>
-#             #{button_id} {{
-#                 background-color: rgb(204, 204, 204);
-#                 color: rgb(38, 39, 48);
-#                 padding: 0.55em 0.68em;
-#                 position: relative;
-#                 text-decoration: none;
-#                 border-radius: 8px;
-#                 border-width: 1px;
-#                 border-style: solid;
-#                 border-color: rgb(230, 234, 241);
-#                 border-image: initial;
-
-#             }} 
-#             #{button_id}:hover {{
-#                 background-color: rgb(184, 184, 184);
-#                 color: rgb(20, 21, 25);
-#             }}
-#             #{button_id}:active {{
-#                 box-shadow: none;
-#                 background-color: rgb(154, 154, 154);
-#                 color: rgb(20, 21, 25);
-#                 }}
-#         </style> """
-
-#     dl_link = custom_css + f'<a download="{download_filename}" id="{button_id}" href="data:file/txt;base64,{b64}">{button_text}</a><br></br>'
-
-#     return dl_link
-
-
-
-# def to_excel(df):
-#     global writer
-#     output = BytesIO()
-#     writer.save()
-#     processed_data = output.getvalue()
-#     return processed_data
-
-
-
-
 
 #########################################################################################
-# This is the workhorse script
+# This is the workhorse function
 #########################################################################################
 
 def cluster_solver(df):
 
     global writer
     global output
+    global op
 
     # Import Data
     df = df
@@ -190,7 +94,6 @@ def cluster_solver(df):
     # Get columns names
     colNames = df.drop(['Rating', 'target',], axis=1).columns
     colNames = colNames.insert(1, 'Const')
-    # colNames
 
     # Concatenate the new dataframes and add column names
     op = pd.concat([UID_new,intercep_new, coefficients_new], axis=1)
@@ -258,8 +161,8 @@ def cluster_solver(df):
 
 
         
-        #**********************************************************************#
-        # This is where the classification stuff begins
+    #**********************************************************************#
+    # This is where the classification stuff begins
 
     for i in range(18, 23):
         
@@ -332,7 +235,7 @@ def cluster_solver(df):
                 cls_avg_list.append(cls_mean)
                 cls_std = df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].std()
                 cls_avg_list.append(cls_std)
-                # NaN means there is either only 1 observation in that cluster or none. test
+                # NaN means there is either only 1 observation in that cluster or none.
 
             # Convert to dataframe and transpose
             cls_averages = pd.DataFrame(cls_avg_list)
@@ -419,29 +322,83 @@ def cluster_solver(df):
             map_collection.append(mapping)
 
             # Write each dataframe to a different worksheet.
-            mapping.to_excel(writer, sheet_name=f"{df_cl.columns[-1][8:17]}s, {j} vars, {round(clf_scores[0][2]*100)}% Acc.")
+            mapping.to_excel(writer, index=False, sheet_name=f"{df_cl.columns[-1][8:17]}s, {j} vars, {round(clf_scores[0][2]*100)}% Acc.")
 
         all_maps.append(map_collection)
 
-    op.to_excel(writer, sheet_name="All Regressions, Clusters")
+    op.to_excel(writer, index=False, sheet_name="All Regressions, Clusters")
+
+
+    #**********************************************************************#
+    # Add averages for all observations to cls_averages_all before exporting
+    all_obs = []
+
+    # Variable means for all observations
+    all_obs_mean = pd.Series({'Const': op['Const'].mean()}).append(op.filter(regex='^[a-zA-Z][0-9]').mean()).append(pd.Series({"Count":op.shape[0]}))
+    all_obs.append(all_obs_mean)
+
+    # Variable standard deviations for all observations
+    all_obs_std = pd.Series({'Const': op['Const'].std()}).append(op.filter(regex='^[a-zA-Z][0-9]').std())
+    all_obs.append(all_obs_std)
+
+    # Save as dataframe and append to all cls_averages_all dataframe
+    all_obs_df = pd.DataFrame(all_obs)
+    all_obs_df = all_obs_df.T
+    all_obs_cols = ['All obs avg', 'All obs stdev']
+    all_obs_df.columns = all_obs_cols
+    cls_averages_all = pd.concat([cls_averages_all, all_obs_df], axis=1)
+
     cls_averages_all.to_excel(writer, sheet_name="Cluster Avgs and StDevs")
 
     return [writer, op]
 
 
-
-# writer.save()  # Wrap this into the download button function
-
+#########################################################################################
+# Download link
+#########################################################################################
 
 def get_table_download_link(table):
     """Generates a link allowing the data in a given panda dataframe to be downloaded
     in:  dataframe
     out: href string
     """
+
+    button_uuid = str(uuid.uuid4()).replace('-', '')
+    button_id = re.sub('\d+', '', button_uuid)
+    # button_id = "download_button"
+
+    custom_css = f""" 
+        <style>
+            #{button_id} {{
+                background-color: rgb(204, 204, 204);
+                color: rgb(38, 39, 48);
+                padding: 0.55em 0.68em;
+                position: relative;
+                text-decoration: none;
+                border-radius: 8px;
+                border-width: 1px;
+                border-style: solid;
+                border-color: rgb(230, 234, 241);
+                border-image: initial;
+
+            }} 
+            #{button_id}:hover {{
+                background-color: rgb(184, 184, 184);
+                color: rgb(20, 21, 25);
+            }}
+            #{button_id}:active {{
+                box-shadow: none;
+                background-color: rgb(154, 154, 154);
+                color: rgb(20, 21, 25);
+                }}
+        </style> """
+
+
     writer.save()
     xlsx_data = output.getvalue()
     b64 = base64.b64encode(xlsx_data)
-    return f'<a href="data:application/octet-stream;base64,{b64.decode()}" download="extract.xlsx">Download csv file</a>' # decode b'abc' => abc
+    dl_link = custom_css + f'<a href="data:application/octet-stream;base64,{b64.decode()}" download="{filename}.xlsx" id="{button_id}">Download Excel file</a>' # decode b'abc' => abc
+    return dl_link
 
 
 
@@ -452,11 +409,11 @@ def get_table_download_link(table):
 # Streamlit app begins
 #########################################################################################
 
-st.title("Market Research Cluster/Classifier V2")
+st.title("Cluster and Classification Mapping Utility")
 
 st.subheader("How it works:")
 st.write("""Upload your research participant dataset, and this tool will compute
-optimal cluster solutions""")
+optimal cluster solutions and mappings for key variable combinations""")
 data_file = st.file_uploader("Upload CSV",type=['csv'])
 
 # Once a file is uploaded, everything starts
@@ -476,10 +433,10 @@ if data_file is not None:
 		my_bar.progress(percent_complete + 1)
 	
 	# Display and download clustered data 
-	st.header("Clustered Data")
+	st.header("Clustered Data & Mappings")
 	st.write("""Cluster assignments have been added to the original data.
-	Click the button below to download.""")
-	# st.dataframe(r[1]) 
+	Click the button below to download cluster solutions and mappings.""")
+	st.dataframe(op)
 
 	st.write("To download the dataset, enter the desired filename and click below.")
 
@@ -487,12 +444,11 @@ if data_file is not None:
 	col1, col2 = st.beta_columns([2,1])
 
 	with col1:
-		filename = st.text_input('Enter output filename and ext (e.g. my-dataframe.csv)', 'clustered-data.csv')
+		filename = st.text_input('Enter output filename:', 'clustered-data')
 
 	with col2:
 		st.write(" ")
 		st.write(" ")
 		st.write(" ")
-		# download_button_str = download_button(r[0], filename, 'Download Data', pickle_it=False)
 		download_button_str = get_table_download_link(writer)
 		st.markdown(download_button_str, unsafe_allow_html=True)
