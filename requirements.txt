@@ -4,3 +4,4 @@ streamlit==0.73.1
 pandas==1.1.5
 plotly==4.11.0
 scikit_learn==0.24.1
+xlsxwriter==1.2.7
