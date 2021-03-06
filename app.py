@@ -167,6 +167,7 @@ def cluster_solver(df):
     for i in range(18, 23):
         
         df_cl = op.iloc[:,np.r_[2:18,i]]  # i is the current cluster solution
+        df_cl_const = op.iloc[:,np.r_[1:18,i]]  # i is the current cluster solution
 
         #**********************************************************************#
 
@@ -230,10 +231,12 @@ def cluster_solver(df):
 
             # Take the mean of every variable for each cluster
             for k in range(1, df_cl.iloc[:,-1].max()+1):
-                cls_mean = df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].mean()
-                cls_mean = cls_mean.append(pd.Series({"Count":df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].shape[0]}))
+                cls_mean = pd.Series({"Count":df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].shape[0]})
+                cls_mean = cls_mean.append(pd.Series({"Const":op[op.iloc[:,-1] == k].loc[:,'Const'].mean()}))
+                cls_mean = cls_mean.append(df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].mean())
                 cls_avg_list.append(cls_mean)
-                cls_std = df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].std()
+                cls_std = pd.Series({"Const":op[op.iloc[:,-1] == k].loc[:,'Const'].std()})
+                cls_std = cls_std.append(df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].std())
                 cls_avg_list.append(cls_std)
                 # NaN means there is either only 1 observation in that cluster or none.
 
@@ -334,15 +337,23 @@ def cluster_solver(df):
     all_obs = []
 
     # Variable means for all observations
-    all_obs_mean = pd.Series({'Const': op['Const'].mean()}).append(op.filter(regex='^[a-zA-Z][0-9]').mean()).append(pd.Series({"Count":op.shape[0]}))
+    all_obs_mean = list(op.filter(regex='^[a-zA-Z][0-9]').mean().values)
+    all_obs_mean.insert(0,op['Const'].mean())
+    all_obs_mean.insert(0,len(op))
     all_obs.append(all_obs_mean)
 
     # Variable standard deviations for all observations
-    all_obs_std = pd.Series({'Const': op['Const'].std()}).append(op.filter(regex='^[a-zA-Z][0-9]').std())
+    all_obs_std = list(op.filter(regex='^[a-zA-Z][0-9]').std().values)
+    all_obs_std.insert(0,op['Const'].std())
+    all_obs_std.insert(0,"")
     all_obs.append(all_obs_std)
 
+
     # Save as dataframe and append to all cls_averages_all dataframe
-    all_obs_df = pd.DataFrame(all_obs)
+    all_obs_cols = list(op.filter(regex='^[a-zA-Z][0-9]').columns)
+    all_obs_cols.insert(0, "Const")
+    all_obs_cols.insert(0, "Count")
+    all_obs_df = pd.DataFrame(all_obs, columns=all_obs_cols)
     all_obs_df = all_obs_df.T
     all_obs_cols = ['All obs avg', 'All obs stdev']
     all_obs_df.columns = all_obs_cols
