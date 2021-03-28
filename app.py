@@ -161,63 +161,63 @@ def cluster_solver(df):
 
 
         
-    #**********************************************************************#
-    # This is where the classification stuff begins
+    # #**********************************************************************#
+    # # This is where the classification stuff begins
 
     for i in range(18, 23):
         
         df_cl = op.iloc[:,np.r_[2:18,i]]  # i is the current cluster solution
         df_cl_const = op.iloc[:,np.r_[1:18,i]]  # i is the current cluster solution
 
-        #**********************************************************************#
+    #     #**********************************************************************#
 
-        # Split data into 70% training, 30% validation
-        train, valid = train_test_split(df_cl, test_size=0.30, random_state=123)
+    #     # Split data into 70% training, 30% validation
+    #     train, valid = train_test_split(df_cl, test_size=0.30, random_state=123)
 
-        # X is unlabeled training data, y is true training labels 
-        X, y = train.iloc[:,0:-1], train.iloc[:,-1]
+    #     # X is unlabeled training data, y is true training labels 
+    #     X, y = train.iloc[:,0:-1], train.iloc[:,-1]
 
-        X_valid, y_valid = valid.iloc[:,0:-1], valid.iloc[:,-1]
+    #     X_valid, y_valid = valid.iloc[:,0:-1], valid.iloc[:,-1]
 
-        #**********************************************************************#
+    #     #**********************************************************************#
 
-        # Get variable importances
+    #     # Get variable importances
 
-        clf1 = RandomForestClassifier(random_state=0)
-        clf2 = GradientBoostingClassifier(random_state=0)
+    #     clf1 = RandomForestClassifier(random_state=0)
+    #     clf2 = GradientBoostingClassifier(random_state=0)
 
-        classifiers = [['rf', clf1], ['gbt', clf2]]
+    #     classifiers = [['rf', clf1], ['gbt', clf2]]
 
-        for classifier in classifiers:    
-            # Fit classifier to training data
-            classifier[1].fit(X,y)    
+    #     for classifier in classifiers:    
+    #         # Fit classifier to training data
+    #         classifier[1].fit(X,y)    
 
-        # Create variable importance dataframe
-        num_vars = list(range(1,len(clf1.feature_importances_)+1))
-        importance = pd.DataFrame({'variable': num_vars,
-                                'rf': clf1.feature_importances_,
-                                'gbt': clf2.feature_importances_,})
+    #     # Create variable importance dataframe
+    #     num_vars = list(range(1,len(clf1.feature_importances_)+1))
+    #     importance = pd.DataFrame({'variable': num_vars,
+    #                             'rf': clf1.feature_importances_,
+    #                             'gbt': clf2.feature_importances_,})
 
-        # Average variable importance of rf and gbt models
-        importance['avg'] = (importance['rf']+importance['gbt'])/2
+    #     # Average variable importance of rf and gbt models
+    #     importance['avg'] = (importance['rf']+importance['gbt'])/2
 
-        # Put avg importances on a scale from 0 to 1 to make it easier to visualize
-        importance['Relative Importance'] = np.interp(importance['avg'],
-                                                    (importance['avg'].min(),
-                                                    importance['avg'].max()),
-                                                    (0, 1))
+    #     # Put avg importances on a scale from 0 to 1 to make it easier to visualize
+    #     importance['Relative Importance'] = np.interp(importance['avg'],
+    #                                                 (importance['avg'].min(),
+    #                                                 importance['avg'].max()),
+    #                                                 (0, 1))
 
-        # View top 10 variables when RF and GBT models are averaged
-        top_10_avg = importance.sort_values(by='avg', ascending=False)[['avg','Relative Importance']].head(10)
+    #     # View top 10 variables when RF and GBT models are averaged
+    #     top_10_avg = importance.sort_values(by='avg', ascending=False)[['avg','Relative Importance']].head(10)
 
-        # Add variable rank column to dataframe
-        importance_rank = num_vars
-        importance = importance.sort_values(by='Relative Importance', ascending=False)
-        importance['rank'] = importance_rank
-        importance.reset_index(inplace=True)
+    #     # Add variable rank column to dataframe
+    #     importance_rank = num_vars
+    #     importance = importance.sort_values(by='Relative Importance', ascending=False)
+    #     importance['rank'] = importance_rank
+    #     importance.reset_index(inplace=True)
 
-        # Save index of top 5 variables (not the variable number!)
-        top_5 = importance[importance['rank'] <= 5]['index']
+    #     # Save index of top 5 variables (not the variable number!)
+    #     top_5 = importance[importance['rank'] <= 5]['index']
 
         #**********************************************************************#
         # Average and Standard Deviations for each cluster/variable combination
@@ -258,76 +258,76 @@ def cluster_solver(df):
             cls_averages_all = pd.concat([cls_averages_all, cls_averages], axis=1)
         
         
-        #**********************************************************************#
-        # Convert data to binary, train classifiers, score validation, create maps
+    #     #**********************************************************************#
+    #     # Convert data to binary, train classifiers, score validation, create maps
 
-        # Convert X, X_valid, and df_cl predictors to all 1 and -1
-        X = (X.mask(df > 0, other=1, inplace=False)
-            .mask(df <= 0, other=-1, inplace=False))
-        X_valid = (X_valid.mask(df > 0, other=1, inplace=False)
-                .mask(df <= 0, other=-1, inplace=False))
-        all_data_masked = (df_cl.iloc[:,0:-1].mask(df > 0, other=1, inplace=False)
-                        .mask(df <= 0, other=-1, inplace=False))
+    #     # Convert X, X_valid, and df_cl predictors to all 1 and -1
+    #     X = (X.mask(df > 0, other=1, inplace=False)
+    #         .mask(df <= 0, other=-1, inplace=False))
+    #     X_valid = (X_valid.mask(df > 0, other=1, inplace=False)
+    #             .mask(df <= 0, other=-1, inplace=False))
+    #     all_data_masked = (df_cl.iloc[:,0:-1].mask(df > 0, other=1, inplace=False)
+    #                     .mask(df <= 0, other=-1, inplace=False))
 
-        map_collection = []
+    #     map_collection = []
 
-        # Retrain on the 2-5 most important variables
-        for j in range(2,6):
+    #     # Retrain on the 2-5 most important variables
+    #     for j in range(2,6):
 
-            clf_scores = []
+    #         clf_scores = []
 
-            clf1 = RandomForestClassifier(random_state=0)
-            clf2 = GradientBoostingClassifier(random_state=0)
-            clf3 = SVC(random_state=0)
-            clf4 = KNeighborsClassifier()
+    #         clf1 = RandomForestClassifier(random_state=0)
+    #         clf2 = GradientBoostingClassifier(random_state=0)
+    #         clf3 = SVC(random_state=0)
+    #         clf4 = KNeighborsClassifier()
 
-            classifiers = [['rf', clf1], ['gbt', clf2], ['svc', clf3], ['knn', clf4]]
+    #         classifiers = [['rf', clf1], ['gbt', clf2], ['svc', clf3], ['knn', clf4]]
             
-            # Fit each classifier to the current variable/cluster combination
-            for classifier in classifiers:
+    #         # Fit each classifier to the current variable/cluster combination
+    #         for classifier in classifiers:
 
-                # Fit classifier to training data
-                classifier[1].fit(X.iloc[:,np.r_[top_5[0:j]]],y)
+    #             # Fit classifier to training data
+    #             classifier[1].fit(X.iloc[:,np.r_[top_5[0:j]]],y)
 
-                # Store classifier-specific results [algorithm object, classifier name, scores]
-                results = [classifier[1],
-                        classifier[0],
-                        classifier[1].score(X_valid.iloc[:,np.r_[top_5[0:j]]],y_valid)]
+    #             # Store classifier-specific results [algorithm object, classifier name, scores]
+    #             results = [classifier[1],
+    #                     classifier[0],
+    #                     classifier[1].score(X_valid.iloc[:,np.r_[top_5[0:j]]],y_valid)]
 
-                # Overall classifier results
-                clf_scores.append(results)
+    #             # Overall classifier results
+    #             clf_scores.append(results)
 
-            # Sort classifier accuracy in descending order
-            clf_scores = sorted(clf_scores, key=itemgetter(2), reverse=True)
-            # clf_scores[0][0] is the best model
+    #         # Sort classifier accuracy in descending order
+    #         clf_scores = sorted(clf_scores, key=itemgetter(2), reverse=True)
+    #         # clf_scores[0][0] is the best model
             
-            # Fit the best model on all data
-            best_model = clf_scores[0][0].fit(all_data_masked.iloc[:,np.r_[top_5[0:j]]], df_cl.iloc[:,-1])
+    #         # Fit the best model on all data
+    #         best_model = clf_scores[0][0].fit(all_data_masked.iloc[:,np.r_[top_5[0:j]]], df_cl.iloc[:,-1])
 
-            #******************************************************************#
-            # Create mappings
+    #         #******************************************************************#
+    #         # Create mappings
             
-            # Creates grid of dimension j
-            grid = pd.DataFrame(list(itertools.product([-1,1], repeat=j)))
+    #         # Creates grid of dimension j
+    #         grid = pd.DataFrame(list(itertools.product([-1,1], repeat=j)))
             
-            grid.columns = all_data_masked.iloc[:,np.r_[top_5[0:j]]].columns
+    #         grid.columns = all_data_masked.iloc[:,np.r_[top_5[0:j]]].columns
 
-            # This is the best model predicting the grid
-            preds = best_model.predict(grid)            
+    #         # This is the best model predicting the grid
+    #         preds = best_model.predict(grid)            
 
-            # Add to grid dataframe
-            grid['Predicted Cluster'] = preds
+    #         # Add to grid dataframe
+    #         grid['Predicted Cluster'] = preds
 
-            # Change grid to mapping to fit into the rest of the code
-            mapping = grid
+    #         # Change grid to mapping to fit into the rest of the code
+    #         mapping = grid
 
-            # Save current mapping to map collection for this cluster solution
-            map_collection.append(mapping)
+    #         # Save current mapping to map collection for this cluster solution
+    #         map_collection.append(mapping)
 
-            # Write each dataframe to a different worksheet.
-            mapping.to_excel(writer, index=False, sheet_name=f"{df_cl.columns[-1][8:17]}s, {j} vars, {round(clf_scores[0][2]*100)}% Acc.")
+    #         # Write each dataframe to a different worksheet.
+    #         mapping.to_excel(writer, index=False, sheet_name=f"{df_cl.columns[-1][8:17]}s, {j} vars, {round(clf_scores[0][2]*100)}% Acc.")
 
-        all_maps.append(map_collection)
+    #     all_maps.append(map_collection)
 
     op.to_excel(writer, index=False, sheet_name="All Regressions, Clusters")
 
