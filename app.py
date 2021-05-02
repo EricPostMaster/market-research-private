@@ -213,102 +213,102 @@ def cluster_solver(df):
     # #**********************************************************************#
     # # This is where the classification stuff begins
 
-    last_var = op.shape[1]-max_clusters+1
-    last_cluster = op.shape[1]
+    # last_var = op.shape[1]-max_clusters+1
+    # last_cluster = op.shape[1]
 
 
-    for i in range(last_var, last_cluster):
+    # for i in range(last_var, last_cluster):
         
-        df_cl = op.iloc[:,np.r_[2:last_var,i]]  # i is the current cluster solution
-        df_cl_const = op.iloc[:,np.r_[1:last_var,i]]  # i is the current cluster solution
+    #     df_cl = op.iloc[:,np.r_[2:last_var,i]]  # i is the current cluster solution
+    #     df_cl_const = op.iloc[:,np.r_[1:last_var,i]]  # i is the current cluster solution
+
+    # #     #**********************************************************************#
+
+    # #     # Split data into 70% training, 30% validation
+    #     # train, valid = train_test_split(df_cl, test_size=0.30, random_state=123)
+
+    # #     # X is unlabeled training data, y is true training labels 
+    # #     X, y = train.iloc[:,0:-1], train.iloc[:,-1]
+
+    # #     X_valid, y_valid = valid.iloc[:,0:-1], valid.iloc[:,-1]
+
+    # #     #**********************************************************************#
+
+    # #     # Get variable importances
+
+    # #     clf1 = RandomForestClassifier(random_state=0)
+    # #     clf2 = GradientBoostingClassifier(random_state=0)
+
+    # #     classifiers = [['rf', clf1], ['gbt', clf2]]
+
+    # #     for classifier in classifiers:    
+    # #         # Fit classifier to training data
+    # #         classifier[1].fit(X,y)    
+
+    # #     # Create variable importance dataframe
+    # #     num_vars = list(range(1,len(clf1.feature_importances_)+1))
+    # #     importance = pd.DataFrame({'variable': num_vars,
+    # #                             'rf': clf1.feature_importances_,
+    # #                             'gbt': clf2.feature_importances_,})
+
+    # #     # Average variable importance of rf and gbt models
+    # #     importance['avg'] = (importance['rf']+importance['gbt'])/2
+
+    # #     # Put avg importances on a scale from 0 to 1 to make it easier to visualize
+    # #     importance['Relative Importance'] = np.interp(importance['avg'],
+    # #                                                 (importance['avg'].min(),
+    # #                                                 importance['avg'].max()),
+    # #                                                 (0, 1))
+
+    # #     # View top 10 variables when RF and GBT models are averaged
+    # #     top_10_avg = importance.sort_values(by='avg', ascending=False)[['avg','Relative Importance']].head(10)
+
+    # #     # Add variable rank column to dataframe
+    # #     importance_rank = num_vars
+    # #     importance = importance.sort_values(by='Relative Importance', ascending=False)
+    # #     importance['rank'] = importance_rank
+    # #     importance.reset_index(inplace=True)
+
+    # #     # Save index of top 5 variables (not the variable number!)
+    # #     top_5 = importance[importance['rank'] <= 5]['index']
 
     #     #**********************************************************************#
-
-    #     # Split data into 70% training, 30% validation
-        # train, valid = train_test_split(df_cl, test_size=0.30, random_state=123)
-
-    #     # X is unlabeled training data, y is true training labels 
-    #     X, y = train.iloc[:,0:-1], train.iloc[:,-1]
-
-    #     X_valid, y_valid = valid.iloc[:,0:-1], valid.iloc[:,-1]
-
-    #     #**********************************************************************#
-
-    #     # Get variable importances
-
-    #     clf1 = RandomForestClassifier(random_state=0)
-    #     clf2 = GradientBoostingClassifier(random_state=0)
-
-    #     classifiers = [['rf', clf1], ['gbt', clf2]]
-
-    #     for classifier in classifiers:    
-    #         # Fit classifier to training data
-    #         classifier[1].fit(X,y)    
-
-    #     # Create variable importance dataframe
-    #     num_vars = list(range(1,len(clf1.feature_importances_)+1))
-    #     importance = pd.DataFrame({'variable': num_vars,
-    #                             'rf': clf1.feature_importances_,
-    #                             'gbt': clf2.feature_importances_,})
-
-    #     # Average variable importance of rf and gbt models
-    #     importance['avg'] = (importance['rf']+importance['gbt'])/2
-
-    #     # Put avg importances on a scale from 0 to 1 to make it easier to visualize
-    #     importance['Relative Importance'] = np.interp(importance['avg'],
-    #                                                 (importance['avg'].min(),
-    #                                                 importance['avg'].max()),
-    #                                                 (0, 1))
-
-    #     # View top 10 variables when RF and GBT models are averaged
-    #     top_10_avg = importance.sort_values(by='avg', ascending=False)[['avg','Relative Importance']].head(10)
-
-    #     # Add variable rank column to dataframe
-    #     importance_rank = num_vars
-    #     importance = importance.sort_values(by='Relative Importance', ascending=False)
-    #     importance['rank'] = importance_rank
-    #     importance.reset_index(inplace=True)
-
-    #     # Save index of top 5 variables (not the variable number!)
-    #     top_5 = importance[importance['rank'] <= 5]['index']
-
-        #**********************************************************************#
-        # Average and Standard Deviations for each cluster/variable combination
-        # For cluster 1 of 2, calculate the average and stdev for each variable
-        # For cluster 2 of 2, calculate the average and stdev for each variable
-        # Etc.
+    #     # Average and Standard Deviations for each cluster/variable combination
+    #     # For cluster 1 of 2, calculate the average and stdev for each variable
+    #     # For cluster 2 of 2, calculate the average and stdev for each variable
+    #     # Etc.
         
-        if n == max_clusters:
+    #     if n == max_clusters:
         
-            cls_avg_list = []
+    #         cls_avg_list = []
 
-            # Take the mean of every variable for each cluster
-            for k in range(1, df_cl.iloc[:,-1].max()+1):
-                cls_mean = pd.Series({"Count":df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].shape[0]})
-                cls_mean = cls_mean.append(pd.Series({"Const":op[op.iloc[:,-1] == k].loc[:,'Const'].mean()}))
-                cls_mean = cls_mean.append(df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].mean())
-                cls_avg_list.append(cls_mean)
-                cls_std = pd.Series({"Const":op[op.iloc[:,-1] == k].loc[:,'Const'].std()})
-                cls_std = cls_std.append(df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].std())
-                cls_avg_list.append(cls_std)
-                # NaN means there is either only 1 observation in that cluster or none.
+    #         # Take the mean of every variable for each cluster
+    #         for k in range(1, df_cl.iloc[:,-1].max()+1):
+    #             cls_mean = pd.Series({"Count":df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].shape[0]})
+    #             cls_mean = cls_mean.append(pd.Series({"Const":op[op.iloc[:,-1] == k].loc[:,'Const'].mean()}))
+    #             cls_mean = cls_mean.append(df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].mean())
+    #             cls_avg_list.append(cls_mean)
+    #             cls_std = pd.Series({"Const":op[op.iloc[:,-1] == k].loc[:,'Const'].std()})
+    #             cls_std = cls_std.append(df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].std())
+    #             cls_avg_list.append(cls_std)
+    #             # NaN means there is either only 1 observation in that cluster or none.
 
-            # Convert to dataframe and transpose
-            cls_averages = pd.DataFrame(cls_avg_list)
-            cls_averages = cls_averages.T
+    #         # Convert to dataframe and transpose
+    #         cls_averages = pd.DataFrame(cls_avg_list)
+    #         cls_averages = cls_averages.T
 
-            # Create helpful column names (Cluster # of total_#)
-            col_names = []
-            for col in range(1, k+1):
-                new_name1 = f"Avg cluster {col}/{k}"
-                col_names.append(new_name1)
-                new_name2 = f"Std cluster {col}/{k}"
-                col_names.append(new_name2)
+    #         # Create helpful column names (Cluster # of total_#)
+    #         col_names = []
+    #         for col in range(1, k+1):
+    #             new_name1 = f"Avg cluster {col}/{k}"
+    #             col_names.append(new_name1)
+    #             new_name2 = f"Std cluster {col}/{k}"
+    #             col_names.append(new_name2)
 
-            # Rename columns
-            cls_averages.columns = col_names
+    #         # Rename columns
+    #         cls_averages.columns = col_names
 
-            cls_averages_all = pd.concat([cls_averages_all, cls_averages], axis=1)
+    #         cls_averages_all = pd.concat([cls_averages_all, cls_averages], axis=1)
         
         
     #     #**********************************************************************#
