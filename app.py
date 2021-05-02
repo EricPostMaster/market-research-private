@@ -108,6 +108,8 @@ def cluster_solver(df):
     # Save only regression coefficients for clustering
     scores = op.drop(['UID','Const'], axis=1)
 
+    op_base_column_count = op.shape[1]
+
 
     #########################################################################################
     # Clustering, classification, outputs created
@@ -211,10 +213,10 @@ def cluster_solver(df):
     # #**********************************************************************#
     # # This is where the classification stuff begins
 
-    for i in range(18, 23):
+    for i in range(op_base_column_count, op_base_column_count+max_clusters-1):
         
-        df_cl = op.iloc[:,np.r_[2:18,i]]  # i is the current cluster solution
-        df_cl_const = op.iloc[:,np.r_[1:18,i]]  # i is the current cluster solution
+        df_cl = op.iloc[:,np.r_[2:op_base_column_count,i]]  # i is the current cluster solution
+        df_cl_const = op.iloc[:,np.r_[1:op_base_column_count,i]]  # i is the current cluster solution
 
     #     #**********************************************************************#
 
