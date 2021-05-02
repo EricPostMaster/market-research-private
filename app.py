@@ -17,6 +17,12 @@ from sklearn_extra.cluster import KMedoids
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.metrics import silhouette_samples, silhouette_score
 from operator import itemgetter
+from scipy.spatial import distance_matrix
+from scipy.spatial import distance
+from pyclustering.cluster.kmeans import kmeans
+from pyclustering.utils.metric import type_metric, distance_metric
+from pyclustering.cluster.center_initializer import kmeans_plusplus_initializer
+from scipy import stats
 
 # Classification
 from sklearn.model_selection import train_test_split
@@ -119,45 +125,86 @@ def cluster_solver(df):
     # Column of last cluster solution
     last_var = op.shape[1]
 
+    # Create Pearson distance function
+    def pearson_dist(x, y):
+        r = stats.pearsonr(x, y)[0]
+        return (1 - r) / 2
+
+    # Holds only final cluster solutions created in loop below
+    cluster_solutions = {}
+
     # Maximum number of clusters
     max_clusters = 6
 
     for n in range(2, max_clusters+1):
-        
-        sw = []
-        
-        # Create clustering objects
-        cls1 = KMeans(n_clusters=n, random_state=0)
-        cls2 = KMedoids(n_clusters=n, random_state=0)
-        cls3 = AgglomerativeClustering(n_clusters=n,
-                                    affinity='euclidean',
-                                    linkage='ward')
-            # Agglomerative clustering: if linkage=ward, affinity must be Euclidean
-        cls_algs = [['kMeans', cls1],
-                    ['kMedoids', cls2],
-                    ['Hierarchical', cls3]]
-        
-        # Fit and score clustering solutions for i clusters w/ each algorithm
-        for cls in cls_algs:
-            
-            # Fit the model to the factor analysis scores
-            cls[1].fit(scores)
-            
-            # List of assigned clusters
-            clusters = cls[1].fit_predict(scores)
-            
-            # Silhouette scores for each solution
-            silhouette_avg = silhouette_score(scores,clusters)
-            
-            # Store solution info
-            algorithm = cls[0]
-            n_stats = [algorithm, n, silhouette_avg, clusters]
-            sw.append(n_stats)
 
-        # Reorder cluster lists by descending silhouette scores.
-        # Clusters in first element should be assigned to training data.
-        sw = sorted(sw, key=itemgetter(2), reverse=True)
-        op[f'Optimal {sw[0][1]} cluster solution ({sw[0][0]})'] = sw[0][3] + 1
+        # change your df to numpy arr
+        sample = scores.to_numpy()
+        
+        # define a custom metric
+        metric = distance_metric(type_metric.USER_DEFINED, func=pearson_dist)
+        
+        # carry out a km++ init
+        initial_centers = kmeans_plusplus_initializer(sample, n, random_state=123).initialize()
+        
+        # execute kmeans
+        kmeans_instance = kmeans(sample, initial_centers, metric=metric)
+        
+        # run cluster analysis
+        kmeans_instance.process()
+        
+        # get clusters
+        clusters = kmeans_instance.get_clusters()
+        
+        # Empty dataframe to take in cluster assignments for each loop iteration
+        df_clusters = pd.DataFrame()
+
+        for i in range(len(clusters)):
+            df = scores.iloc[clusters[i],:]
+            df[f'Optimal {n} cluster solution'] = i+1
+            df_clusters = pd.concat([df_clusters, df])
+            df_clusters.sort_index(inplace=True)
+        
+        cluster_solutions[f'Optimal {n} cluster solution'] = df_clusters.iloc[:, -1]
+
+    all_cluster_solutions = pd.DataFrame.from_dict(cluster_solutions)
+
+    op.merge(all_cluster_solutions, left_index=True, right_index=True)
+        
+        # sw = []
+        
+        # # Create clustering objects
+        # cls1 = KMeans(n_clusters=n, random_state=0)
+        # cls2 = KMedoids(n_clusters=n, random_state=0)
+        # cls3 = AgglomerativeClustering(n_clusters=n,
+        #                             affinity='euclidean',
+        #                             linkage='ward')
+        #     # Agglomerative clustering: if linkage=ward, affinity must be Euclidean
+        # cls_algs = [['kMeans', cls1],
+        #             ['kMedoids', cls2],
+        #             ['Hierarchical', cls3]]
+        
+        # # Fit and score clustering solutions for i clusters w/ each algorithm
+        # for cls in cls_algs:
+            
+        #     # Fit the model to the factor analysis scores
+        #     cls[1].fit(scores)
+            
+        #     # List of assigned clusters
+        #     clusters = cls[1].fit_predict(scores)
+            
+        #     # Silhouette scores for each solution
+        #     silhouette_avg = silhouette_score(scores,clusters)
+            
+        #     # Store solution info
+        #     algorithm = cls[0]
+        #     n_stats = [algorithm, n, silhouette_avg, clusters]
+        #     sw.append(n_stats)
+
+        # # Reorder cluster lists by descending silhouette scores.
+        # # Clusters in first element should be assigned to training data.
+        # sw = sorted(sw, key=itemgetter(2), reverse=True)
+        # op[f'Optimal {sw[0][1]} cluster solution ({sw[0][0]})'] = sw[0][3] + 1
 
 
         
