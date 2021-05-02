@@ -173,59 +173,214 @@ def cluster_solver(df):
 
     op.merge(all_cluster_solutions, left_index=True, right_index=True)
         
+        # sw = []
+        
+        # # Create clustering objects
+        # cls1 = KMeans(n_clusters=n, random_state=0)
+        # cls2 = KMedoids(n_clusters=n, random_state=0)
+        # cls3 = AgglomerativeClustering(n_clusters=n,
+        #                             affinity='euclidean',
+        #                             linkage='ward')
+        #     # Agglomerative clustering: if linkage=ward, affinity must be Euclidean
+        # cls_algs = [['kMeans', cls1],
+        #             ['kMedoids', cls2],
+        #             ['Hierarchical', cls3]]
+        
+        # # Fit and score clustering solutions for i clusters w/ each algorithm
+        # for cls in cls_algs:
+            
+        #     # Fit the model to the factor analysis scores
+        #     cls[1].fit(scores)
+            
+        #     # List of assigned clusters
+        #     clusters = cls[1].fit_predict(scores)
+            
+        #     # Silhouette scores for each solution
+        #     silhouette_avg = silhouette_score(scores,clusters)
+            
+        #     # Store solution info
+        #     algorithm = cls[0]
+        #     n_stats = [algorithm, n, silhouette_avg, clusters]
+        #     sw.append(n_stats)
+
+        # # Reorder cluster lists by descending silhouette scores.
+        # # Clusters in first element should be assigned to training data.
+        # sw = sorted(sw, key=itemgetter(2), reverse=True)
+        # op[f'Optimal {sw[0][1]} cluster solution ({sw[0][0]})'] = sw[0][3] + 1
+
 
         
     # #**********************************************************************#
     # # This is where the classification stuff begins
 
-    last_var = op.shape[1]-max_clusters+1
-    last_cluster = op.shape[1]
+    # last_var = op.shape[1]-max_clusters+1
+    # last_cluster = op.shape[1]
 
 
-    for i in range(last_var, last_cluster):
+    # for i in range(last_var, last_cluster):
         
-        df_cl = op.iloc[:,np.r_[2:last_var,i]]  # i is the current cluster solution
-        df_cl_const = op.iloc[:,np.r_[1:last_var,i]]  # i is the current cluster solution
+    #     df_cl = op.iloc[:,np.r_[2:last_var,i]]  # i is the current cluster solution
+    #     df_cl_const = op.iloc[:,np.r_[1:last_var,i]]  # i is the current cluster solution
 
-  
+    # #     #**********************************************************************#
 
-        #**********************************************************************#
-        # Average and Standard Deviations for each cluster/variable combination
-        # For cluster 1 of 2, calculate the average and stdev for each variable
-        # For cluster 2 of 2, calculate the average and stdev for each variable
-        # Etc.
+    # #     # Split data into 70% training, 30% validation
+    #     # train, valid = train_test_split(df_cl, test_size=0.30, random_state=123)
+
+    # #     # X is unlabeled training data, y is true training labels 
+    # #     X, y = train.iloc[:,0:-1], train.iloc[:,-1]
+
+    # #     X_valid, y_valid = valid.iloc[:,0:-1], valid.iloc[:,-1]
+
+    # #     #**********************************************************************#
+
+    # #     # Get variable importances
+
+    # #     clf1 = RandomForestClassifier(random_state=0)
+    # #     clf2 = GradientBoostingClassifier(random_state=0)
+
+    # #     classifiers = [['rf', clf1], ['gbt', clf2]]
+
+    # #     for classifier in classifiers:    
+    # #         # Fit classifier to training data
+    # #         classifier[1].fit(X,y)    
+
+    # #     # Create variable importance dataframe
+    # #     num_vars = list(range(1,len(clf1.feature_importances_)+1))
+    # #     importance = pd.DataFrame({'variable': num_vars,
+    # #                             'rf': clf1.feature_importances_,
+    # #                             'gbt': clf2.feature_importances_,})
+
+    # #     # Average variable importance of rf and gbt models
+    # #     importance['avg'] = (importance['rf']+importance['gbt'])/2
+
+    # #     # Put avg importances on a scale from 0 to 1 to make it easier to visualize
+    # #     importance['Relative Importance'] = np.interp(importance['avg'],
+    # #                                                 (importance['avg'].min(),
+    # #                                                 importance['avg'].max()),
+    # #                                                 (0, 1))
+
+    # #     # View top 10 variables when RF and GBT models are averaged
+    # #     top_10_avg = importance.sort_values(by='avg', ascending=False)[['avg','Relative Importance']].head(10)
+
+    # #     # Add variable rank column to dataframe
+    # #     importance_rank = num_vars
+    # #     importance = importance.sort_values(by='Relative Importance', ascending=False)
+    # #     importance['rank'] = importance_rank
+    # #     importance.reset_index(inplace=True)
+
+    # #     # Save index of top 5 variables (not the variable number!)
+    # #     top_5 = importance[importance['rank'] <= 5]['index']
+
+    #     #**********************************************************************#
+    #     # Average and Standard Deviations for each cluster/variable combination
+    #     # For cluster 1 of 2, calculate the average and stdev for each variable
+    #     # For cluster 2 of 2, calculate the average and stdev for each variable
+    #     # Etc.
         
-        if n == max_clusters:
+    #     if n == max_clusters:
         
-            cls_avg_list = []
+    #         cls_avg_list = []
 
-            # Take the mean of every variable for each cluster
-            for k in range(1, df_cl.iloc[:,-1].max()+1):
-                cls_mean = pd.Series({"Count":df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].shape[0]})
-                cls_mean = cls_mean.append(pd.Series({"Const":op[op.iloc[:,-1] == k].loc[:,'Const'].mean()}))
-                cls_mean = cls_mean.append(df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].mean())
-                cls_avg_list.append(cls_mean)
-                cls_std = pd.Series({"Const":op[op.iloc[:,-1] == k].loc[:,'Const'].std()})
-                cls_std = cls_std.append(df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].std())
-                cls_avg_list.append(cls_std)
-                # NaN means there is either only 1 observation in that cluster or none.
+    #         # Take the mean of every variable for each cluster
+    #         for k in range(1, df_cl.iloc[:,-1].max()+1):
+    #             cls_mean = pd.Series({"Count":df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].shape[0]})
+    #             cls_mean = cls_mean.append(pd.Series({"Const":op[op.iloc[:,-1] == k].loc[:,'Const'].mean()}))
+    #             cls_mean = cls_mean.append(df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].mean())
+    #             cls_avg_list.append(cls_mean)
+    #             cls_std = pd.Series({"Const":op[op.iloc[:,-1] == k].loc[:,'Const'].std()})
+    #             cls_std = cls_std.append(df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].std())
+    #             cls_avg_list.append(cls_std)
+    #             # NaN means there is either only 1 observation in that cluster or none.
 
-            # Convert to dataframe and transpose
-            cls_averages = pd.DataFrame(cls_avg_list)
-            cls_averages = cls_averages.T
+    #         # Convert to dataframe and transpose
+    #         cls_averages = pd.DataFrame(cls_avg_list)
+    #         cls_averages = cls_averages.T
 
-            # Create helpful column names (Cluster # of total_#)
-            col_names = []
-            for col in range(1, k+1):
-                new_name1 = f"Avg cluster {col}/{k}"
-                col_names.append(new_name1)
-                new_name2 = f"Std cluster {col}/{k}"
-                col_names.append(new_name2)
+    #         # Create helpful column names (Cluster # of total_#)
+    #         col_names = []
+    #         for col in range(1, k+1):
+    #             new_name1 = f"Avg cluster {col}/{k}"
+    #             col_names.append(new_name1)
+    #             new_name2 = f"Std cluster {col}/{k}"
+    #             col_names.append(new_name2)
 
-            # Rename columns
-            cls_averages.columns = col_names
+    #         # Rename columns
+    #         cls_averages.columns = col_names
 
-            cls_averages_all = pd.concat([cls_averages_all, cls_averages], axis=1)
+    #         cls_averages_all = pd.concat([cls_averages_all, cls_averages], axis=1)
+        
+        
+    #     #**********************************************************************#
+    #     # Convert data to binary, train classifiers, score validation, create maps
+
+    #     # Convert X, X_valid, and df_cl predictors to all 1 and -1
+    #     X = (X.mask(df > 0, other=1, inplace=False)
+    #         .mask(df <= 0, other=-1, inplace=False))
+    #     X_valid = (X_valid.mask(df > 0, other=1, inplace=False)
+    #             .mask(df <= 0, other=-1, inplace=False))
+    #     all_data_masked = (df_cl.iloc[:,0:-1].mask(df > 0, other=1, inplace=False)
+    #                     .mask(df <= 0, other=-1, inplace=False))
+
+    #     map_collection = []
+
+    #     # Retrain on the 2-5 most important variables
+    #     for j in range(2,6):
+
+    #         clf_scores = []
+
+    #         clf1 = RandomForestClassifier(random_state=0)
+    #         clf2 = GradientBoostingClassifier(random_state=0)
+    #         clf3 = SVC(random_state=0)
+    #         clf4 = KNeighborsClassifier()
+
+    #         classifiers = [['rf', clf1], ['gbt', clf2], ['svc', clf3], ['knn', clf4]]
+            
+    #         # Fit each classifier to the current variable/cluster combination
+    #         for classifier in classifiers:
+
+    #             # Fit classifier to training data
+    #             classifier[1].fit(X.iloc[:,np.r_[top_5[0:j]]],y)
+
+    #             # Store classifier-specific results [algorithm object, classifier name, scores]
+    #             results = [classifier[1],
+    #                     classifier[0],
+    #                     classifier[1].score(X_valid.iloc[:,np.r_[top_5[0:j]]],y_valid)]
+
+    #             # Overall classifier results
+    #             clf_scores.append(results)
+
+    #         # Sort classifier accuracy in descending order
+    #         clf_scores = sorted(clf_scores, key=itemgetter(2), reverse=True)
+    #         # clf_scores[0][0] is the best model
+            
+    #         # Fit the best model on all data
+    #         best_model = clf_scores[0][0].fit(all_data_masked.iloc[:,np.r_[top_5[0:j]]], df_cl.iloc[:,-1])
+
+    #         #******************************************************************#
+    #         # Create mappings
+            
+    #         # Creates grid of dimension j
+    #         grid = pd.DataFrame(list(itertools.product([-1,1], repeat=j)))
+            
+    #         grid.columns = all_data_masked.iloc[:,np.r_[top_5[0:j]]].columns
+
+    #         # This is the best model predicting the grid
+    #         preds = best_model.predict(grid)            
+
+    #         # Add to grid dataframe
+    #         grid['Predicted Cluster'] = preds
+
+    #         # Change grid to mapping to fit into the rest of the code
+    #         mapping = grid
+
+    #         # Save current mapping to map collection for this cluster solution
+    #         map_collection.append(mapping)
+
+    #         # Write each dataframe to a different worksheet.
+    #         mapping.to_excel(writer, index=False, sheet_name=f"{df_cl.columns[-1][8:17]}s, {j} vars, {round(clf_scores[0][2]*100)}% Acc.")
+
+    #     all_maps.append(map_collection)
 
     op.to_excel(writer, index=False, sheet_name="All Regressions, Clusters")
 
