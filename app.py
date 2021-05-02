@@ -213,15 +213,19 @@ def cluster_solver(df):
     # #**********************************************************************#
     # # This is where the classification stuff begins
 
-    for i in range(op_base_column_count+1, op_base_column_count+max_clusters-1):
+    last_var = op.shape[1]-max_clusters+1
+    last_cluster = op.shape[1]
+
+
+    for i in range(last_var, last_cluster):
         
-        df_cl = op.iloc[:,np.r_[2:op_base_column_count,i]]  # i is the current cluster solution
-        df_cl_const = op.iloc[:,np.r_[1:op_base_column_count,i]]  # i is the current cluster solution
+        df_cl = op.iloc[:,np.r_[2:last_var,i]]  # i is the current cluster solution
+        df_cl_const = op.iloc[:,np.r_[1:last_var,i]]  # i is the current cluster solution
 
     #     #**********************************************************************#
 
     #     # Split data into 70% training, 30% validation
-    #     train, valid = train_test_split(df_cl, test_size=0.30, random_state=123)
+        # train, valid = train_test_split(df_cl, test_size=0.30, random_state=123)
 
     #     # X is unlabeled training data, y is true training labels 
     #     X, y = train.iloc[:,0:-1], train.iloc[:,-1]
