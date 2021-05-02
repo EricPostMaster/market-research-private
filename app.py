@@ -213,7 +213,7 @@ def cluster_solver(df):
     # #**********************************************************************#
     # # This is where the classification stuff begins
 
-    for i in range(op_base_column_count, op_base_column_count+max_clusters-1):
+    for i in range(op_base_column_count+1, op_base_column_count+max_clusters-1):
         
         df_cl = op.iloc[:,np.r_[2:op_base_column_count,i]]  # i is the current cluster solution
         df_cl_const = op.iloc[:,np.r_[1:op_base_column_count,i]]  # i is the current cluster solution
