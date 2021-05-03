@@ -1,42 +1,20 @@
 # Streamlit
-#!pip install streamlit
 import streamlit as st
-import streamlit.components.v1 as stc
 
 # Data processing
 import numpy as np
 import pandas as pd
 import random
 from sklearn.linear_model import LinearRegression
-import xlsxwriter
 
 # Clustering
-from sklearn.cluster import KMeans
-# conda install -c conda-forge scikit-learn-extra
-from sklearn_extra.cluster import KMedoids
-from sklearn.cluster import AgglomerativeClustering
-from sklearn.metrics import silhouette_samples, silhouette_score
-from operator import itemgetter
-from scipy.spatial import distance_matrix
-from scipy.spatial import distance
 from pyclustering.cluster.kmeans import kmeans
 from pyclustering.utils.metric import type_metric, distance_metric
 from pyclustering.cluster.center_initializer import kmeans_plusplus_initializer
 from scipy import stats
 
-# Classification
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.svm import SVC
-from sklearn.neighbors import KNeighborsClassifier
-import itertools
-
 # Download button
 import base64
-import os
-import json
-import pickle
 import uuid
 import re
 import plotly.express as px
@@ -171,42 +149,29 @@ def cluster_solver(df):
 
     all_cluster_solutions = pd.DataFrame.from_dict(cluster_solutions)
 
-    op.merge(all_cluster_solutions, left_index=True, right_index=True)
-        
+    op = op.merge(all_cluster_solutions, left_index=True, right_index=True)
 
         
     # #**********************************************************************#
-    # # This is where the classification stuff begins
+    # # This part takes the averages and standard deviation of each cluster
 
     last_var = op.shape[1]-max_clusters+1
     last_cluster = op.shape[1]
 
-
     for i in range(last_var, last_cluster):
-        
-        df_cl = op.iloc[:,np.r_[2:last_var,i]]  # i is the current cluster solution
-        df_cl_const = op.iloc[:,np.r_[1:last_var,i]]  # i is the current cluster solution
+    
+        df_cl_cons = op.iloc[:,np.r_[1:last_var,i]]  # Same as df_cl but with constant
 
-  
-
-        #**********************************************************************#
-        # Average and Standard Deviations for each cluster/variable combination
-        # For cluster 1 of 2, calculate the average and stdev for each variable
-        # For cluster 2 of 2, calculate the average and stdev for each variable
-        # Etc.
-        
         if n == max_clusters:
-        
+
             cls_avg_list = []
 
             # Take the mean of every variable for each cluster
-            for k in range(1, df_cl.iloc[:,-1].max()+1):
-                cls_mean = pd.Series({"Count":df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].shape[0]})
-                cls_mean = cls_mean.append(pd.Series({"Const":op[op.iloc[:,-1] == k].loc[:,'Const'].mean()}))
-                cls_mean = cls_mean.append(df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].mean())
+            for k in range(1, df_cl_cons.iloc[:,-1].max()+1):
+                cls_mean = df_cl_cons[df_cl_cons.iloc[:,-1] == k].iloc[:,0:-1].mean()
+                cls_mean = cls_mean.append(pd.Series({"Count":df_cl_cons[df_cl_cons.iloc[:,-1] == k].iloc[:,0:-1].shape[0]}))
                 cls_avg_list.append(cls_mean)
-                cls_std = pd.Series({"Const":op[op.iloc[:,-1] == k].loc[:,'Const'].std()})
-                cls_std = cls_std.append(df_cl[df_cl.iloc[:,-1] == k].iloc[:,0:-1].std())
+                cls_std = df_cl_cons[df_cl_cons.iloc[:,-1] == k].iloc[:,0:-1].std()
                 cls_avg_list.append(cls_std)
                 # NaN means there is either only 1 observation in that cluster or none.
 
@@ -216,11 +181,12 @@ def cluster_solver(df):
 
             # Create helpful column names (Cluster # of total_#)
             col_names = []
+
             for col in range(1, k+1):
                 new_name1 = f"Avg cluster {col}/{k}"
                 col_names.append(new_name1)
                 new_name2 = f"Std cluster {col}/{k}"
-                col_names.append(new_name2)
+                col_names.append(new_name2)            
 
             # Rename columns
             cls_averages.columns = col_names
