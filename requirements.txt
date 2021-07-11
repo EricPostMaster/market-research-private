@@ -7,3 +7,4 @@ scipy==1.4.1
 pyclustering==0.10.1.2
 numpy==1.21.0
 scikit_learn==0.24.2
+Cython==0.29.20
