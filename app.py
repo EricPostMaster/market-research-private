@@ -140,9 +140,9 @@ def cluster_solver(df):
         df_clusters = pd.DataFrame()
 
         for i in range(len(clusters)):
-            df = scores.iloc[clusters[i],:]
-            df[f'Optimal {n} cluster solution'] = i+1
-            df_clusters = pd.concat([df_clusters, df])
+            df_scores = scores.iloc[clusters[i],:]
+            df_scores[f'Optimal {n} cluster solution'] = i+1
+            df_clusters = pd.concat([df_clusters, df_scores])
             df_clusters.sort_index(inplace=True)
         
         cluster_solutions[f'Optimal {n} cluster solution'] = df_clusters.iloc[:, -1]
@@ -224,6 +224,107 @@ def cluster_solver(df):
     cls_averages_all = pd.concat([cls_averages_all, all_obs_df], axis=1)
 
     cls_averages_all.to_excel(writer, sheet_name="Cluster Avgs and StDevs")
+
+########################################################################################
+
+# This is the Scenarios analysis that looks at each Category of variable and isolates its impact
+# Each variable is exported to its own sheet in the final Excel workbook
+
+    # Unique letters in the Categories
+    category_letters = list(df.filter(regex='^[a-zA-Z][0-9]').columns.str[0].unique())
+    category_letters_numbers = {key: None for key in category_letters}
+
+    for letter in category_letters:
+
+        # List of all variables starting with the current Category letter
+        letter_list = list(df.loc[:, df.columns.str.startswith(letter)].columns)
+        number_list = []
+
+        # Create a list of the numbers associated with each Category letter
+        for i in letter_list:
+            number_list.append(i[1])
+        
+        # Add the maximum number of the Category as a value to the Category letter key
+        category_letters_numbers[letter] = int(max(number_list))
+
+    all_regressions = []
+
+    for category in category_letters_numbers:
+        
+        all_cat_coefs = {}
+
+        # Initial run for A0 (e.g., show only samples when A was omitted)
+        var_of_interest = category+'0'
+
+        vars_of_interest = df.columns.str[0] == category
+        vars_of_interest = list(df.columns[vars_of_interest])
+
+        # Include in df_var if all Categories are 0
+        df_var = df[(df[vars_of_interest] == 0).all(axis=1)]
+
+        # Drop Category columns
+        df_var = df_var.drop(vars_of_interest, axis=1)
+
+        X = df_var.filter(regex='^[a-zA-Z][0-9]')
+        y = df_var['target']    
+
+        # Fit and score model
+        reg = LinearRegression().fit(X, y)
+        reg.score(X, y)
+        const = reg.intercept_
+        coef = list(reg.coef_)
+        coef.insert(0, const)
+
+        all_cat_coefs[var_of_interest] = coef
+        all_columns = list(X.columns.insert(0,'const'))
+
+        # Now do the same regression as above, but isolate each individual variable in the category (e.g., A1, A2, etc.)
+        for number in range(1,category_letters_numbers[category]+1):
+            # Isolate the variable of interest
+            var_of_interest = category+str(number)
+
+            # Create dataset with variable of interest == 1
+            df_var = df[df[var_of_interest] == 1]
+            
+            # Filter out the variables from the Category letter
+            keep_columns = df_var.columns.str[0] != category
+
+            df_var = df_var[df_var.columns[keep_columns]]
+            
+            # Create predictor and target datasets (and remove UID and Rating)
+            X = df_var.filter(regex='^[a-zA-Z][0-9]')
+            y = df_var['target']
+
+            # Fit and score model
+            reg = LinearRegression().fit(X, y)
+            reg.score(X, y)
+            const = reg.intercept_
+            coef = list(reg.coef_)
+            coef.insert(0, const)
+
+            # All coefficients and vars of interest needed (data, columns)
+            all_cat_coefs[var_of_interest] = coef
+
+            # Columns (index)
+            all_columns = list(X.columns.insert(0,'const'))
+            
+
+        # Put the pieces together
+        category_df_components = [category, all_cat_coefs, all_columns]
+
+        # Add to master list to put into individual dataframes
+        all_regressions.append(category_df_components)
+
+    # Put each element of all_regressions into its own dataframe and save to the Excel document
+
+    for i in all_regressions:
+        df_category = pd.DataFrame(data=i[1], index=i[2])
+        df_category.to_excel(writer, index=True, sheet_name=f"Category {i[0]} Scenarios")
+
+        
+########################################################################################
+
+# This is the end of the function. Just don't break it, and life is good :)
 
     return [writer, op]
 
