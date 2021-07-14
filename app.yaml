@@ -1,2 +1,2 @@
-runtime: custom
+runtime: python37
 env: standard
