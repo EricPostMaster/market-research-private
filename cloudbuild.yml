@@ -1,3 +1,3 @@
 steps:
 - name: 'gcr.io/cloud-builders/gcloud'
-  args: ['app', 'deploy', 'project-files/app.yaml', '--project=weighty-stacker-319521', '--version=$SHORT_SHA']
+  args: ['app', 'deploy', '--project=weighty-stacker-319521', '--version=$SHORT_SHA']
